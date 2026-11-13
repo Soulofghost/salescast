@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SalesCast | Revenue Time-Series Forecasting & Trend Decomposition</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="app-layout">
+    <header class="navbar">
+      <div class="nav-brand">
+        <div class="brand-chart">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+        </div>
+        <div>
+          <h2>SalesCast</h2>
+          <span class="tagline">REVENUE FORECASTING & DECOMPOSITION ENGINE</span>
+        </div>
+      </div>
+
+      <div class="nav-metrics">
+        <div class="metric-chip">
+          <span class="label">DATASETS</span>
+          <span class="value" id="statDatasets">0</span>
+        </div>
+        <div class="metric-chip">
+          <span class="label">HISTORICAL REV</span>
+          <span class="value text-emerald" id="statRevenue">$0.00</span>
+        </div>
+        <div class="metric-chip">
+          <span class="label">AVG MODEL MAPE</span>
+          <span class="value" id="statMape">0.0%</span>
+        </div>
+        <button class="btn btn-primary" id="openDatasetModal">+ New Sales Stream</button>
+      </div>
+    </header>
+
+    <main class="main-container">
+      <div class="hero-section">
+        <div>
+          <h1>Autonomous Revenue Forecasting & Trend Projection</h1>
+          <p class="subtitle">Time-series decomposition utilizing Holt's linear exponential smoothing, ordinary least squares trend fitting, and confidence bounds estimation.</p>
+        </div>
+      </div>
+
+      <!-- Main Layout: Sidebar controls + Main Forecast Display -->
+      <div class="dashboard-grid">
+        <!-- Left: Configuration & Dataset Selector -->
+        <div class="sidebar-pane">
+          <div class="card">
+            <div class="card-header">
+              <h3>Forecast Configuration</h3>
+            </div>
+            <div class="card-body">
+              <div class="field">
+                <label>Active Dataset</label>
+                <select id="datasetSelect">
+                  <option value="">Loading sales streams...</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label>Forecasting Algorithm</label>
+                <select id="modelSelect">
+                  <option value="HOLT_LINEAR">Holt's Linear Exponential Smoothing</option>
+                  <option value="LINEAR_TREND">OLS Linear Trend Regression</option>
+                </select>
+              </div>
+
+              <div class="field">
+                <label>Forecast Horizon</label>
+                <select id="horizonSelect">
+                  <option value="7">Next 7 Days</option>
+                  <option value="14" selected>Next 14 Days</option>
+                  <option value="30">Next 30 Days</option>
+                  <option value="60">Next 60 Days</option>
+                </select>
+              </div>
+
+              <button class="btn btn-primary btn-block" id="runForecastBtn">⚡ Generate Projections</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Results & Projections -->
+        <div class="content-pane">
+          <!-- Metric KPI Row -->
+          <div class="kpi-row">
+            <div class="kpi-card">
+              <span class="kpi-label">Mean Absolute % Error (MAPE)</span>
+              <span class="kpi-value text-emerald" id="modelMape">--</span>
+            </div>
+            <div class="kpi-card">
+              <span class="kpi-label">Root Mean Sq Error (RMSE)</span>
+              <span class="kpi-value" id="modelRmse">--</span>
+            </div>
+            <div class="kpi-card">
+              <span class="kpi-label">Mean Absolute Error (MAE)</span>
+              <span class="kpi-value" id="modelMae">--</span>
+            </div>
+            <div class="kpi-card">
+              <span class="kpi-label">Projected Period Revenue</span>
+              <span class="kpi-value text-indigo" id="projectedTotal">--</span>
+            </div>
+          </div>
+
+          <!-- Tabs: Projections vs Historical Data -->
+          <div class="nav-tabs" style="margin-top: 1.5rem;">
+            <button class="tab-btn active" data-tab="projections">Future Projections</button>
+            <button class="tab-btn" data-tab="historical">Historical Training Data</button>
+          </div>
+
+          <div class="tab-pane active" id="paneProjections">
+            <div class="card">
+              <div class="card-header">
+                <h3>Projected Revenue Trajectory</h3>
+                <span class="badge badge-info" id="activeHorizonBadge">14-Day Forecast</span>
+              </div>
+              <div class="card-body">
+                <div class="table-container">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Predicted Revenue (USD)</th>
+                        <th>Lower Bound (90% CI)</th>
+                        <th>Upper Bound (90% CI)</th>
+                        <th>Expected Volatility</th>
+                      </tr>
+                    </thead>
+                    <tbody id="projectionsTableBody">
+                      <tr><td colspan="5" class="text-center text-muted">Select a dataset and click "Generate Projections" to evaluate forecast.</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="tab-pane" id="paneHistorical">
+            <div class="card">
+              <div class="card-header">
+                <h3>Historical Data Points</h3>
+                <span class="badge badge-info" id="historicalCountBadge">0 Records</span>
+              </div>
+              <div class="card-body">
+                <div class="table-container">
+                  <table class="data-table">
+                    <thead>
+                      <tr>
+                        <th>Date</th>
+                        <th>Recorded Revenue (USD)</th>
+                        <th>Units Sold</th>
+                        <th>Channel</th>
+                      </tr>
+                    </thead>
+                    <tbody id="historicalTableBody">
+                      <tr><td colspan="4" class="text-center text-muted">No historical records loaded.</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal: Add Dataset -->
+  <div class="modal-overlay" id="datasetModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Register New Revenue Stream</h3>
+        <button class="btn-close" id="closeDatasetBtn">&times;</button>
+      </div>
+      <form id="createDatasetForm">
+        <div class="field">
+          <label>Stream Name *</label>
+          <input type="text" id="dsName" required placeholder="e.g. Enterprise Cloud Subscriptions">
+        </div>
+        <div class="field">
+          <label>Description</label>
+          <input type="text" id="dsDesc" placeholder="e.g. B2B Tier 1 Contract Inflows">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancelDatasetBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary">Initialize & Seed History</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

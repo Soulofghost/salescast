@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  salescast:
+    build: .
+    container_name: salescast-service
+    ports:
+      - "8000:8000"
+    environment:
+      - SALESCAST_PORT=8000
+      - SALESCAST_DB_PATH=backend/data/salescast.db
+    volumes:
+      - salescast-data:/app/backend/data
+    restart: unless-stopped
+
+volumes:
+  salescast-data:
